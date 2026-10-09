@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viaje Febrero 2027</title>
+<style>
+  :root {
+    --fondo: #f5f6f8;
+    --superficie: #ffffff;
+    --texto: #1f2933;
+    --suave: #616e7c;
+    --borde: #e1e5ea;
+    --radio: 16px;
+    --sombra: 0 2px 10px rgba(31, 41, 51, 0.07);
+
+    /* Ushuaia: tonos fríos (glaciar, hielo, montaña) */
+    --u-principal: #2f6690;
+    --u-oscuro: #1d3d5c;
+    --u-claro: #e6f0f7;
+    --u-acento: #81c3d7;
+
+    /* Rapa Nui: tonos cálidos y de mar (océano, arena, atardecer) */
+    --r-principal: #0f8b8d;
+    --r-oscuro: #0b5d5f;
+    --r-claro: #fdf1e6;
+    --r-acento: #e9724c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--fondo);
+    color: var(--texto);
+    line-height: 1.45;
+  }
+
+  .contenedor {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+  }
+
+  h1, h2, h3 { margin: 0; line-height: 1.2; }
+
+  /* ---------- Cuenta regresiva ---------- */
+  .cabecera {
+    border-radius: var(--radio);
+    padding: 28px 20px;
+    text-align: center;
+    color: #fff;
+    background: linear-gradient(120deg, var(--u-oscuro) 0%, var(--u-principal) 45%, var(--r-principal) 70%, var(--r-acento) 100%);
+    box-shadow: var(--sombra);
+    transition: background 0.4s;
+  }
+  .cabecera.ushuaia { background: linear-gradient(135deg, var(--u-oscuro), var(--u-principal) 60%, var(--u-acento)); }
+  .cabecera.rapanui { background: linear-gradient(135deg, var(--r-oscuro), var(--r-principal) 55%, var(--r-acento)); }
+
+  .cabecera .titulo { font-size: 1rem; font-weight: 600; opacity: 0.9; letter-spacing: 0.02em; }
+  .cabecera .numero {
+    font-size: clamp(3.5rem, 14vw, 6rem);
+    font-weight: 800;
+    margin: 6px 0 0;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .cabecera .unidad { font-size: 1.15rem; font-weight: 600; }
+  .cabecera .detalle { margin-top: 10px; font-size: 0.95rem; opacity: 0.92; }
+
+  /* ---------- Tarjetas de destino ---------- */
+  .destinos {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 20px;
+    margin-top: 24px;
+  }
+  @media (max-width: 760px) {
+    .destinos { grid-template-columns: 1fr; }
+  }
+
+  .tarjeta {
+    background: var(--superficie);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    overflow: hidden;
+    border: 3px solid transparent;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.25s, transform 0.25s;
+  }
+  .tarjeta[data-destino="ushuaia"] { --principal: var(--u-principal); --oscuro: var(--u-oscuro); --claro: var(--u-claro); --acento: var(--u-acento); }
+  .tarjeta[data-destino="rapanui"] { --principal: var(--r-principal); --oscuro: var(--r-oscuro); --claro: var(--r-claro); --acento: var(--r-acento); }
+  .tarjeta.elegida { border-color: var(--principal); }
+
+  .tarjeta-cabecera {
+    padding: 20px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--oscuro), var(--principal));
+    position: relative;
+  }
+  .tarjeta[data-destino="rapanui"] .tarjeta-cabecera {
+    background: linear-gradient(135deg, var(--r-oscuro), var(--r-principal) 65%, var(--r-acento));
+  }
+  .tarjeta-cabecera h2 { font-size: 1.5rem; }
+  .tarjeta-cabecera .pais { font-size: 0.9rem; opacity: 0.85; }
+  .fechas {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+  .sello {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: #fff;
+    color: var(--oscuro);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: none;
+  }
+  .tarjeta.elegida .sello { display: inline-block; }
+
+  .tarjeta-cuerpo { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 22px; flex: 1; }
+
+  .seccion h3 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--oscuro);
+    margin-bottom: 10px;
+  }
+
+  /* Presupuesto */
+  .presupuesto { width: 100%; border-collapse: collapse; }
+  .presupuesto td { padding: 5px 0; vertical-align: middle; }
+  .presupuesto td:first-child { color: var(--suave); padding-right: 10px; }
+  .presupuesto td:last-child { width: 58%; }
+  .campo-monto { position: relative; }
+  .campo-monto span {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: var(--suave); font-size: 0.9rem; pointer-events: none;
+  }
+  .campo-monto input {
+    width: 100%;
+    padding: 9px 10px 9px 24px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .presupuesto tfoot td { padding-top: 10px; border-top: 2px solid var(--claro); }
+  .presupuesto .fila-total td { font-weight: 700; color: var(--texto); font-size: 1.05rem; }
+  .presupuesto .fila-total td:last-child, .presupuesto .fila-persona td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .presupuesto .fila-persona td { color: var(--suave); padding-top: 2px; border-top: none; }
+  .nota { font-size: 0.8rem; color: var(--suave); margin: 6px 0 0; }
+
+  input[type="text"] {
+    font: inherit;
+    font-size: 16px; /* evita el zoom automático en iPhone */
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--texto);
+    padding: 9px 12px;
+    min-width: 0;
+  }
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--principal, var(--u-principal));
+    box-shadow: 0 0 0 3px var(--claro, var(--u-claro));
+  }
+
+  /* Listas editables */
+  .lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .lista li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--claro);
+    border-radius: 10px;
+    padding: 8px 8px 8px 12px;
+    word-break: break-word;
+  }
+  .lista li .texto { flex: 1; }
+  .lista .vacia { background: none; color: var(--suave); font-size: 0.9rem; padding-left: 0; font-style: italic; }
+  .borrar {
+    border: none;
+    background: transparent;
+    color: var(--suave);
+    font-size: 1.2rem;
+    line-height: 1;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .borrar:hover { background: rgba(0, 0, 0, 0.07); color: #b42318; }
+
+  .agregar { display: flex; gap: 8px; margin-top: 8px; }
+  .agregar input { flex: 1; }
+  .agregar button {
+    border: none;
+    background: var(--principal, var(--u-principal));
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 0 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .agregar button:hover { filter: brightness(1.08); }
+
+  .pros-contras { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+  @media (max-width: 420px) { .pros-contras { grid-template-columns: 1fr; } }
+  .pros-contras h4 { margin: 0 0 8px; font-size: 0.9rem; }
+  .pros-contras .pro h4 { color: #217a3c; }
+  .pros-contras .contra h4 { color: #b42318; }
+  .pros-contras .pro .lista li { background: #eaf6ee; }
+  .pros-contras .contra .lista li { background: #fdeeec; }
+  .pros-contras .agregar button { padding: 0 12px; }
+
+  .boton-elegir {
+    margin-top: auto;
+    width: 100%;
+    border: 2px solid var(--principal);
+    background: #fff;
+    color: var(--principal);
+    font: inherit;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 13px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .boton-elegir:hover { background: var(--claro); }
+  .tarjeta.elegida .boton-elegir { background: var(--principal); color: #fff; }
+
+  /* ---------- Bloques inferiores ---------- */
+  .bloque {
+    background: var(--superficie);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: 20px;
+    margin-top: 24px;
+  }
+  .bloque > h2 { font-size: 1.25rem; margin-bottom: 14px; }
+
+  .comparacion {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 640px) { .comparacion { grid-template-columns: 1fr; } }
+  .dato {
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: var(--fondo);
+  }
+  .dato.u { background: var(--u-claro); }
+  .dato.r { background: var(--r-claro); }
+  .dato .etiqueta { font-size: 0.85rem; color: var(--suave); }
+  .dato .valor { font-size: 1.4rem; font-weight: 800; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .dato.u .valor { color: var(--u-oscuro); }
+  .dato.r .valor { color: var(--r-oscuro); }
+  .dato .sub { font-size: 0.85rem; color: var(--suave); }
+  .veredicto {
+    margin-top: 14px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #fff8e1;
+    color: #7a5b00;
+    font-weight: 600;
+  }
+
+  /* Pendientes */
+  .pendientes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .pendientes li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 8px 12px;
+    border-radius: 10px;
+    background: var(--fondo);
+  }
+  .pendientes label { flex: 1; display: flex; align-items: center; gap: 12px; cursor: pointer; word-break: break-word; }
+  .pendientes input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--u-principal); flex-shrink: 0; cursor: pointer; }
+  .pendientes li.hecho label span { text-decoration: line-through; color: var(--suave); }
+  .progreso { font-size: 0.9rem; color: var(--suave); margin: -6px 0 12px; }
+  .barra { height: 8px; border-radius: 999px; background: var(--borde); overflow: hidden; margin-bottom: 14px; }
+  .barra div { height: 100%; width: 0; background: linear-gradient(90deg, var(--u-principal), var(--r-principal)); transition: width 0.3s; }
+  #bloque-pendientes .agregar button { background: var(--u-oscuro); }
+
+  .pie { text-align: center; color: var(--suave); font-size: 0.8rem; margin-top: 28px; }
+</style>
+</head>
+<body>
+<main class="contenedor">
+
+  <!-- 1. Cuenta regresiva -->
+  <header class="cabecera" id="cabecera">
+    <div class="titulo" id="cuenta-titulo">Faltan para el viaje</div>
+    <div class="numero" id="cuenta-numero">–</div>
+    <div class="unidad" id="cuenta-unidad">días</div>
+    <div class="detalle" id="cuenta-detalle"></div>
+  </header>
+
+  <!-- 2. Tarjetas de destino (se generan con JavaScript) -->
+  <section class="destinos" id="destinos"></section>
+
+  <!-- 3. Resumen comparativo -->
+  <section class="bloque">
+    <h2>Resumen comparativo</h2>
+    <div class="comparacion">
+      <div class="dato u">
+        <div class="etiqueta">Total Ushuaia</div>
+        <div class="valor" id="resumen-ushuaia">$0</div>
+        <div class="sub" id="resumen-ushuaia-pp"></div>
+      </div>
+      <div class="dato r">
+        <div class="etiqueta">Total Rapa Nui</div>
+        <div class="valor" id="resumen-rapanui">$0</div>
+        <div class="sub" id="resumen-rapanui-pp"></div>
+      </div>
+      <div class="dato">
+        <div class="etiqueta">Diferencia</div>
+        <div class="valor" id="resumen-diferencia">$0</div>
+        <div class="sub" id="resumen-diferencia-pp"></div>
+      </div>
+    </div>
+    <div class="veredicto" id="veredicto"></div>
+  </section>
+
+  <!-- 4. Pendientes -->
+  <section class="bloque" id="bloque-pendientes">
+    <h2>Pendientes</h2>
+    <p class="progreso" id="progreso"></p>
+    <div class="barra"><div id="barra"></div></div>
+    <ul class="pendientes" id="lista-pendientes"></ul>
+    <form class="agregar" id="form-pendiente">
+      <input type="text" placeholder="Nuevo pendiente…" aria-label="Nuevo pendiente">
+      <button type="submit">Agregar</button>
+    </form>
+  </section>
+
+  <p class="pie">Todo lo que escribes se guarda automáticamente en este navegador.</p>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Datos fijos de cada destino ----------
+  // Las fechas se escriben como [año, mes (1-12), día].
+  var DESTINOS = [
+    { id: "ushuaia", nombre: "Ushuaia", pais: "Tierra del Fuego, Argentina", ida: [2027, 2, 19], vuelta: [2027, 2, 28] },
+    { id: "rapanui", nombre: "Rapa Nui", pais: "Isla de Pascua, Chile", ida: [2027, 2, 20], vuelta: [2027, 3, 2] }
+  ];
+  var FECHA_POR_DEFECTO = [2027, 2, 19];
+
+  var CATEGORIAS = [
+    { id: "vuelos", nombre: "Vuelos" },
+    { id: "alojamiento", nombre: "Alojamiento" },
+    { id: "comidas", nombre: "Comidas" },
+    { id: "actividades", nombre: "Actividades" },
+    { id: "traslados", nombre: "Traslados" },
+    { id: "otros", nombre: "Otros" }
+  ];
+
+  var PENDIENTES_INICIALES = [
+    "Comprar pasajes",
+    "Reservar alojamiento",
+    "Revisar documentos (carnet o pasaporte vigente)",
+    "Contratar seguro de viaje",
+    "Reservar actividades y excursiones",
+    "Pedir los días libres en el trabajo",
+    "Preparar la maleta"
+  ];
+
+  var CLAVE = "tablero-viaje-feb-2027";
+
+  // ---------- Guardado ----------
+  function estadoInicial() {
+    var e = { elegido: null, destinos: {}, pendientes: [] };
+    DESTINOS.forEach(function (d) {
+      var montos = {};
+      CATEGORIAS.forEach(function (c) { montos[c.id] = ""; });
+      e.destinos[d.id] = { montos: montos, actividades: [], pros: [], contras: [] };
+    });
+    e.pendientes = PENDIENTES_INICIALES.map(function (t) { return { texto: t, hecho: false }; });
+    return e;
+  }
+
+  function cargar() {
+    var base = estadoInicial();
+    try {
+      var guardado = JSON.parse(localStorage.getItem(CLAVE));
+      if (guardado && typeof guardado === "object") {
+        base.elegido = guardado.elegido || null;
+        if (Array.isArray(guardado.pendientes)) base.pendientes = guardado.pendientes;
+        DESTINOS.forEach(function (d) {
+          var g = guardado.destinos && guardado.destinos[d.id];
+          if (!g) return;
+          var b = base.destinos[d.id];
+          CATEGORIAS.forEach(function (c) {
+            if (g.montos && g.montos[c.id] != null) b.montos[c.id] = String(g.montos[c.id]);
+          });
+          ["actividades", "pros", "contras"].forEach(function (k) {
+            if (Array.isArray(g[k])) b[k] = g[k];
+          });
+        });
+      }
+    } catch (err) { /* si no hay nada guardado, se usa el estado inicial */ }
+    return base;
+  }
+
+  var estado = cargar();
+
+  function guardar() {
+    try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (err) { /* sin almacenamiento disponible */ }
+  }
+
+  // ---------- Utilidades de fechas y dinero ----------
+  var MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  var DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+  // Número de día "absoluto" (en UTC) para restar fechas sin problemas de horario de verano.
+  function diaAbsoluto(a) { return Date.UTC(a[0], a[1] - 1, a[2]) / 86400000; }
+  function hoy() { var h = new Date(); return [h.getFullYear(), h.getMonth() + 1, h.getDate()]; }
+  function fechaLarga(a) {
+    var dow = new Date(Date.UTC(a[0], a[1] - 1, a[2])).getUTCDay();
+    return DIAS[dow] + " " + a[2] + " de " + MESES[a[1] - 1] + " de " + a[0];
+  }
+  function fechaCorta(a) { return a[2] + " " + MESES[a[1] - 1].slice(0, 3); }
+
+  var formato = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+  function pesos(n) { return "$" + formato.format(Math.round(n)); }
+  function soloDigitos(s) { return String(s || "").replace(/\D/g, ""); }
+
+  function totalDe(id) {
+    var m = estado.destinos[id].montos;
+    return CATEGORIAS.reduce(function (s, c) { return s + (parseInt(m[c.id], 10) || 0); }, 0);
+  }
+  function tieneMontos(id) {
+    var m = estado.destinos[id].montos;
+    return CATEGORIAS.some(function (c) { return m[c.id] !== ""; });
+  }
+  function destinoPorId(id) { return DESTINOS.filter(function (d) { return d.id === id; })[0]; }
+
+  function el(tag, attrs, hijos) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === "texto") n.textContent = attrs[k];
+      else if (k === "clase") n.className = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    (hijos || []).forEach(function (h) { if (h) n.appendChild(h); });
+    return n;
+  }
+
+  // ---------- 1. Cuenta regresiva ----------
+  function pintarCuenta() {
+    var d = estado.elegido ? destinoPorId(estado.elegido) : null;
+    var salida = d ? d.ida : FECHA_POR_DEFECTO;
+    var faltan = diaAbsoluto(salida) - diaAbsoluto(hoy());
+
+    var cab = document.getElementById("cabecera");
+    cab.className = "cabecera" + (d ? " " + d.id : "");
+
+    document.getElementById("cuenta-titulo").textContent =
+      d ? "Faltan para viajar a " + d.nombre : "Faltan para las vacaciones (aún sin destino elegido)";
+
+    var num = document.getElementById("cuenta-numero");
+    var uni = document.getElementById("cuenta-unidad");
+    if (faltan > 1) { num.textContent = formato.format(faltan); uni.textContent = "días"; }
+    else if (faltan === 1) { num.textContent = "1"; uni.textContent = "día — ¡es mañana!"; }
+    else if (faltan === 0) { num.textContent = "¡Hoy!"; uni.textContent = "es el día de salida"; }
+    else { num.textContent = "✈"; uni.textContent = "¡El viaje ya comenzó!"; }
+
+    document.getElementById("cuenta-detalle").textContent = "Salida desde Santiago: " + fechaLarga(salida);
+  }
+
+  // ---------- 2. Tarjetas ----------
+  function listaEditable(destinoId, clave, placeholder, textoVacio) {
+    var cont = el("div");
+    var ul = el("ul", { clase: "lista" });
+    var items = estado.destinos[destinoId][clave];
+
+    if (!items.length) ul.appendChild(el("li", { clase: "vacia", texto: textoVacio }));
+    items.forEach(function (texto, i) {
+      var borrar = el("button", { clase: "borrar", type: "button", "aria-label": "Borrar", title: "Borrar", texto: "×" });
+      borrar.addEventListener("click", function () {
+        items.splice(i, 1);
+        guardar();
+        pintarTarjetas();
+      });
+      ul.appendChild(el("li", null, [el("span", { clase: "texto", texto: texto }), borrar]));
+    });
+
+    var input = el("input", { type: "text", placeholder: placeholder, "aria-label": placeholder });
+    var form = el("form", { clase: "agregar" }, [input, el("button", { type: "submit", texto: "+", "aria-label": "Agregar" })]);
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var t = input.value.trim();
+      if (!t) return;
+      items.push(t);
+      guardar();
+      pintarTarjetas();
+      // Devuelve el foco al mismo campo para seguir agregando.
+      var nuevo = document.querySelector('[data-campo="' + destinoId + "-" + clave + '"]');
+      if (nuevo) nuevo.focus();
+    });
+    input.setAttribute("data-campo", destinoId + "-" + clave);
+
+    cont.appendChild(ul);
+    cont.appendChild(form);
+    return cont;
+  }
+
+  function tarjeta(d) {
+    var datos = estado.destinos[d.id];
+    var noches = diaAbsoluto(d.vuelta) - diaAbsoluto(d.ida);
+    var art = el("article", { clase: "tarjeta" + (estado.elegido === d.id ? " elegida" : ""), "data-destino": d.id });
+
+    // Cabecera
+    art.appendChild(el("div", { clase: "tarjeta-cabecera" }, [
+      el("span", { clase: "sello", texto: "✓ Elegido" }),
+      el("h2", { texto: d.nombre }),
+      el("div", { clase: "pais", texto: d.pais }),
+      el("div", { clase: "fechas" }, [
+        el("span", { clase: "chip", texto: fechaCorta(d.ida) + " → " + fechaCorta(d.vuelta) + " " + d.vuelta[0] }),
+        el("span", { clase: "chip", texto: noches + " noches · " + (noches + 1) + " días" })
+      ])
+    ]));
+
+    var cuerpo = el("div", { clase: "tarjeta-cuerpo" });
+
+    // Presupuesto
+    var tabla = el("table", { clase: "presupuesto" });
+    var tbody = el("tbody");
+    CATEGORIAS.forEach(function (c) {
+      var input = el("input", {
+        type: "text", inputmode: "numeric", placeholder: "0",
+        "aria-label": c.nombre + " en " + d.nombre + " (pesos chilenos)"
+      });
+      input.value = datos.montos[c.id] ? formato.format(parseInt(datos.montos[c.id], 10)) : "";
+      input.addEventListener("input", function () {
+        var limpio = soloDigitos(input.value);
+        datos.montos[c.id] = limpio;
+        input.value = limpio ? formato.format(parseInt(limpio, 10)) : "";
+        guardar();
+        pintarTotales(d.id);
+        pintarResumen();
+      });
+      tbody.appendChild(el("tr", null, [
+        el("td", { texto: c.nombre }),
+        el("td", null, [el("div", { clase: "campo-monto" }, [el("span", { texto: "$" }), input])])
+      ]));
+    });
+    tabla.appendChild(tbody);
+    tabla.appendChild(el("tfoot", null, [
+      el("tr", { clase: "fila-total" }, [el("td", { texto: "Total (2 adultos)" }), el("td", { id: "total-" + d.id })]),
+      el("tr", { clase: "fila-persona" }, [el("td", { texto: "Por persona" }), el("td", { id: "pp-" + d.id })])
+    ]));
+    cuerpo.appendChild(el("div", { clase: "seccion" }, [
+      el("h3", { texto: "Presupuesto" }),
+      tabla,
+      el("p", { clase: "nota", texto: "Montos en pesos chilenos, para los dos adultos." })
+    ]));
+
+    // Actividades
+    cuerpo.appendChild(el("div", { clase: "seccion" }, [
+      el("h3", { texto: "Actividades que me interesan" }),
+      listaEditable(d.id, "actividades", "Agregar actividad…", "Todavía no hay actividades.")
+    ]));
+
+    // Pros y contras
+    cuerpo.appendChild(el("div", { clase: "seccion" }, [
+      el("h3", { texto: "Pros y contras" }),
+      el("div", { clase: "pros-contras" }, [
+        el("div", { clase: "pro" }, [el("h4", { texto: "👍 Pros" }), listaEditable(d.id, "pros", "Agregar pro…", "Sin pros aún.")]),
+        el("div", { clase: "contra" }, [el("h4", { texto: "👎 Contras" }), listaEditable(d.id, "contras", "Agregar contra…", "Sin contras aún.")])
+      ])
+    ]));
+
+    // Botón elegir
+    var elegido = estado.elegido === d.id;
+    var boton = el("button", {
+      clase: "boton-elegir", type: "button",
+      texto: elegido ? "✓ Destino elegido (toca para quitar)" : "Elegir este destino"
+    });
+    boton.addEventListener("click", function () {
+      estado.elegido = elegido ? null : d.id;
+      guardar();
+      pintarTodo();
+    });
+    cuerpo.appendChild(boton);
+
+    art.appendChild(cuerpo);
+    return art;
+  }
+
+  function pintarTotales(id) {
+    var t = totalDe(id);
+    document.getElementById("total-" + id).textContent = pesos(t);
+    document.getElementById("pp-" + id).textContent = pesos(t / 2);
+  }
+
+  function pintarTarjetas() {
+    var cont = document.getElementById("destinos");
+    cont.innerHTML = "";
+    DESTINOS.forEach(function (d) {
+      cont.appendChild(tarjeta(d));
+      pintarTotales(d.id);
+    });
+  }
+
+  // ---------- 3. Resumen ----------
+  function pintarResumen() {
+    var tu = totalDe("ushuaia"), tr = totalDe("rapanui");
+    var hayU = tieneMontos("ushuaia"), hayR = tieneMontos("rapanui");
+
+    document.getElementById("resumen-ushuaia").textContent = pesos(tu);
+    document.getElementById("resumen-rapanui").textContent = pesos(tr);
+    document.getElementById("resumen-ushuaia-pp").textContent = pesos(tu / 2) + " por persona";
+    document.getElementById("resumen-rapanui-pp").textContent = pesos(tr / 2) + " por persona";
+
+    var dif = Math.abs(tu - tr);
+    document.getElementById("resumen-diferencia").textContent = pesos(dif);
+    document.getElementById("resumen-diferencia-pp").textContent = pesos(dif / 2) + " por persona";
+
+    var v = document.getElementById("veredicto");
+    if (!hayU && !hayR) {
+      v.textContent = "Completa los presupuestos de ambos destinos para compararlos.";
+    } else if (!hayU || !hayR) {
+      v.textContent = "Falta completar el presupuesto de " + (hayU ? "Rapa Nui" : "Ushuaia") + " para comparar.";
+    } else if (tu === tr) {
+      v.textContent = "Ambas opciones cuestan lo mismo.";
+    } else {
+      var barato = tu < tr ? "Ushuaia" : "Rapa Nui";
+      v.textContent = "💰 " + barato + " sale más barato por " + pesos(dif) + " (" + pesos(dif / 2) + " por persona).";
+    }
+  }
+
+  // ---------- 4. Pendientes ----------
+  function pintarPendientes() {
+    var ul = document.getElementById("lista-pendientes");
+    ul.innerHTML = "";
+    if (!estado.pendientes.length) {
+      ul.appendChild(el("li", { texto: "No hay pendientes. ¡Agrega uno!" }));
+    }
+    estado.pendientes.forEach(function (p, i) {
+      var check = el("input", { type: "checkbox" });
+      check.checked = !!p.hecho;
+      check.addEventListener("change", function () {
+        p.hecho = check.checked;
+        guardar();
+        pintarPendientes();
+      });
+      var borrar = el("button", { clase: "borrar", type: "button", "aria-label": "Borrar", title: "Borrar", texto: "×" });
+      borrar.addEventListener("click", function () {
+        estado.pendientes.splice(i, 1);
+        guardar();
+        pintarPendientes();
+      });
+      ul.appendChild(el("li", { clase: p.hecho ? "hecho" : "" }, [
+        el("label", null, [check, el("span", { texto: p.texto })]),
+        borrar
+      ]));
+    });
+
+    var total = estado.pendientes.length;
+    var hechos = estado.pendientes.filter(function (p) { return p.hecho; }).length;
+    document.getElementById("progreso").textContent = total ? hechos + " de " + total + " listos" : "";
+    document.getElementById("barra").style.width = total ? (hechos / total * 100) + "%" : "0";
+  }
+
+  document.getElementById("form-pendiente").addEventListener("submit", function (ev) {
+    ev.preventDefault();
+    var input = this.querySelector("input");
+    var t = input.value.trim();
+    if (!t) return;
+    estado.pendientes.push({ texto: t, hecho: false });
+    input.value = "";
+    guardar();
+    pintarPendientes();
+    input.focus();
+  });
+
+  // ---------- Inicio ----------
+  function pintarTodo() {
+    pintarCuenta();
+    pintarTarjetas();
+    pintarResumen();
+    pintarPendientes();
+  }
+
+  pintarTodo();
+  // Actualiza la cuenta regresiva si la página queda abierta de un día para otro.
+  setInterval(pintarCuenta, 60 * 1000);
+})();
+</script>
+</body>
+</html>
